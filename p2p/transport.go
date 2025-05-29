@@ -6,4 +6,5 @@ type Peer interface {
 
 // Handles connections (TCP, UDP, Websockets..) between two nodes.
 type Transport interface {
+	ListenAndAccept() error
 }
