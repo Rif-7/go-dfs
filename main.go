@@ -2,15 +2,13 @@ package main
 
 import (
 	"log"
-	"time"
 
 	"github.com/Rif-7/go-dfs/p2p"
 )
 
-func main() {
-
+func makeServer(listenAddr string, nodes ...string) *FileServer {
 	tcptransportOpts := p2p.TCPTransportOpts{
-		ListenAddr:    ":3000",
+		ListenAddr:    listenAddr,
 		HandshakeFunc: p2p.NOPHandshakeFunc,
 		Decoder:       p2p.DefaultDecoder{},
 	}
@@ -18,20 +16,27 @@ func main() {
 	tcpTransport := p2p.NewTCPTransport(tcptransportOpts)
 
 	fileServerOpts := FileServerOpts{
-		StorageRoot:       "3000_network",
+		StorageRoot:       listenAddr + "_network",
 		PathTransformFunc: CASPathTransformFunc,
 		Transport:         tcpTransport,
+		BootstrapNodes:    nodes,
 	}
 
 	s := NewFileServer(fileServerOpts)
+	tcpTransport.OnPeer = s.OnPeer
+
+	return s
+
+}
+
+func main() {
+	s1 := makeServer(":3000", "")
+	s2 := makeServer(":4000", ":3000")
 
 	go func() {
-		time.Sleep(time.Second * 4)
-		s.Stop()
+		log.Fatal(s1.Start())
 	}()
 
-	if err := s.Start(); err != nil {
-		log.Fatal(err)
-	}
+	s2.Start()
 
 }
