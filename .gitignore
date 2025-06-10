@@ -1,3 +1,6 @@
 /.vscode
 /bin
+# the default root storage folder
 /storage
+# the root storage folder
+/*_network 

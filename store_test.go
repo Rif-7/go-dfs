@@ -31,7 +31,7 @@ func TestStore(t *testing.T) {
 
 		key := fmt.Sprintf("baz_%d", i)
 		data := []byte("test data")
-		if err := s.writeStream(key, bytes.NewReader(data)); err != nil {
+		if _, err := s.writeStream(key, bytes.NewReader(data)); err != nil {
 			t.Error(err)
 		}
 
