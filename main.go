@@ -45,10 +45,24 @@ func main() {
 	go s2.Start()
 	time.Sleep(time.Second)
 
-	data := bytes.NewReader([]byte("your private data here"))
-	if err := s2.Store("yourkeyhere", data); err != nil {
-		fmt.Println(err)
+	for i := range 10 {
+		data := bytes.NewReader([]byte("your private data here"))
+		if err := s2.Store(fmt.Sprintf("yourkeyhere_%d", i), data); err != nil {
+			fmt.Println(err)
+		}
+		time.Sleep(5 * time.Millisecond)
 	}
+
+	// r, err := s2.Get("yourkeyhere")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// b, err := io.ReadAll(r)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// fmt.Println(string(b))
 
 	select {}
 }
