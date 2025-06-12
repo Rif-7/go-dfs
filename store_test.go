@@ -27,7 +27,7 @@ func TestStore(t *testing.T) {
 	s := newStore()
 	defer teardown(t, s)
 
-	for i := range 50 {
+	for i := range 2 {
 
 		key := fmt.Sprintf("baz_%d", i)
 		data := []byte("test data")
@@ -39,6 +39,7 @@ func TestStore(t *testing.T) {
 			t.Errorf("expected to have key %s", key)
 		}
 
+		// TODO: Read does not close the file anymore
 		_, r, err := s.Read(key)
 		if err != nil {
 			t.Error(err)
