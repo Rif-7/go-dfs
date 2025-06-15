@@ -25,27 +25,30 @@ func TestPathTransformFunc(t *testing.T) {
 
 func TestStore(t *testing.T) {
 	s := newStore()
+	id := generateID()
 	defer teardown(t, s)
 
 	for i := range 2 {
 
 		key := fmt.Sprintf("baz_%d", i)
 		data := []byte("test data")
-		if _, err := s.writeStream(key, bytes.NewReader(data)); err != nil {
+		if _, err := s.writeStream(id, key, bytes.NewReader(data)); err != nil {
 			t.Error(err)
 		}
 
-		if ok := s.Has(key); !ok {
+		if ok := s.Has(id, key); !ok {
 			t.Errorf("expected to have key %s", key)
 		}
 
-		// TODO: Read does not close the file anymore
-		_, r, err := s.Read(key)
+		_, r, err := s.Read(id, key)
 		if err != nil {
 			t.Error(err)
 		}
 
 		b, _ := io.ReadAll(r)
+		if f, ok := r.(io.ReadCloser); ok {
+			f.Close()
+		}
 
 		fmt.Println(string(b))
 
@@ -55,11 +58,11 @@ func TestStore(t *testing.T) {
 
 		fmt.Println(string(b))
 
-		if err := s.Delete(key); err != nil {
+		if err := s.Delete(id, key); err != nil {
 			t.Error(err)
 		}
 
-		if ok := s.Has(key); ok {
+		if ok := s.Has(id, key); ok {
 			t.Errorf("expected to NOT have key %s", key)
 		}
 

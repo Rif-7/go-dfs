@@ -37,36 +37,36 @@ func makeServer(listenAddr string, root string, nodes ...string) *FileServer {
 func main() {
 	s1 := makeServer(":3000", "3000", "")
 	s2 := makeServer(":4000", "4000", ":3000")
+	s3 := makeServer(":5000", "5000", ":4000", ":3000")
 
-	go func() {
-		log.Fatal(s1.Start())
-	}()
-
+	go func() { log.Fatal(s1.Start()) }()
+	time.Sleep(time.Second)
+	go func() { log.Fatal(s2.Start()) }()
+	time.Sleep(time.Second)
+	go func() { log.Fatal(s3.Start()) }()
 	time.Sleep(time.Second)
 
-	go s2.Start()
-	time.Sleep(time.Second)
+	for i := range 5 {
+		key := fmt.Sprintf("helloworld_%d", i)
+		data := bytes.NewReader([]byte("your private data here"))
+		if err := s3.Store(key, data); err != nil {
+			fmt.Println(err)
+		}
 
-	key := "helloworld"
-	data := bytes.NewReader([]byte("your private data here"))
-	if err := s2.Store(key, data); err != nil {
-		fmt.Println(err)
+		if err := s3.store.Delete(s3.ID, key); err != nil {
+			log.Fatal(err)
+		}
+
+		r, err := s3.Get(key)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		b, err := io.ReadAll(r)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(string(b))
 	}
 
-	if err := s2.store.Delete(key); err != nil {
-		log.Fatal(err)
-	}
-
-	r, err := s2.Get(key)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	b, err := io.ReadAll(r)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(string(b))
-
-	select {}
 }
