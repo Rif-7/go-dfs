@@ -65,7 +65,11 @@ func (t *TCPTransport) Consume() <-chan RPC {
 	return t.rpcch
 }
 
+// Dial implements the Transport interface
+// Dial establishes a TCP connection to the given remote address
+// and starts handling incoming messages from that peer.
 func (t *TCPTransport) Dial(addr string) error {
+	// Opening a TCP connection
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return err
@@ -81,6 +85,7 @@ func (t *TCPTransport) Close() error {
 	return t.listener.Close()
 }
 
+// ListenAndAccept implements the Transport interface
 func (t *TCPTransport) ListenAndAccept() error {
 	var err error
 
@@ -98,6 +103,8 @@ func (t *TCPTransport) ListenAndAccept() error {
 
 }
 
+// Accepts incoming TCP connections and spawns a goroutine
+// to handle communication with each connected peer
 func (t *TCPTransport) startAcceptLoop() {
 	for {
 		conn, err := t.listener.Accept()
@@ -114,6 +121,8 @@ func (t *TCPTransport) startAcceptLoop() {
 
 type Temp struct{}
 
+// Creates a peer from the TCP connection and handles
+// incoming messages from the peer
 func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 
 	var err error

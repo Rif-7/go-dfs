@@ -2,14 +2,14 @@ package p2p
 
 import "net"
 
-// Represents a remote node.
+// Represents a remote node
 type Peer interface {
 	net.Conn
 	Send([]byte) error
 	CloseStream()
 }
 
-// Handles connections (TCP, UDP, Websockets..) between two nodes.
+// Handles connections (TCP, UDP, Websockets..) between two nodes
 type Transport interface {
 	Addr() string
 	ListenAndAccept() error

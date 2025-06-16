@@ -82,11 +82,13 @@ func copyEncrypt(key []byte, src io.Reader, dst io.Writer) (int, error) {
 
 	// 16 bytes
 	iv := make([]byte, block.BlockSize())
+	// Creating random IV to ensure that the same data encrypted with
+	// the same key produces a different ciphertext each time.
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
 		return 0, err
 	}
 
-	// prepend the IV to the file
+	// Prepend the IV to the file
 	if _, err := dst.Write(iv); err != nil {
 		return 0, err
 	}

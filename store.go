@@ -84,6 +84,8 @@ func NewStore(opts StoreOpts) *Store {
 	}
 }
 
+// Has returns true if the file identified by
+// the given ID and key exists on local disk.
 func (s *Store) Has(id, key string) bool {
 	pathKey := s.PathTransformFunc(key)
 	fullPathWithRoot := fmt.Sprintf("%s/%s/%s", s.Root, id, pathKey.FullPath())
@@ -92,10 +94,12 @@ func (s *Store) Has(id, key string) bool {
 	return !errors.Is(err, os.ErrNotExist)
 }
 
+// Clear removes all files
 func (s *Store) Clear() error {
 	return os.RemoveAll(s.Root)
 }
 
+// Delete removes the file from local disk
 func (s *Store) Delete(id, key string) error {
 	pathKey := s.PathTransformFunc(key)
 

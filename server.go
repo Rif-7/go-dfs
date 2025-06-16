@@ -50,6 +50,7 @@ func NewFileServer(opts FileServerOpts) *FileServer {
 	}
 }
 
+// broadcast broadcasts the message to all peers
 func (s *FileServer) broadcast(msg *Message) error {
 
 	buf := new(bytes.Buffer)
@@ -83,6 +84,8 @@ type MessageGetFile struct {
 	Key string
 }
 
+// Get returns the file if it exists on local disk
+// otherwise tries to fetch it from peers
 func (s *FileServer) Get(key string) (io.Reader, error) {
 	if s.store.Has(s.ID, key) {
 		fmt.Printf("[%s] serving file (%s) from local disk\n", s.Transport.Addr(), key)
@@ -124,6 +127,8 @@ func (s *FileServer) Get(key string) (io.Reader, error) {
 	return r, err
 }
 
+// Store saves the file locally using the given key and then encrypts
+// and broadcasts it to all connected peers.
 func (s *FileServer) Store(key string, r io.Reader) error {
 	var (
 		fileBuffer = new(bytes.Buffer)
@@ -164,6 +169,7 @@ func (s *FileServer) Store(key string, r io.Reader) error {
 	return nil
 }
 
+// OnPeer adds the peer to the peer map
 func (s *FileServer) OnPeer(p p2p.Peer) error {
 	s.peerLock.Lock()
 	defer s.peerLock.Unlock()
@@ -179,6 +185,7 @@ func (s *FileServer) Stop() {
 	close(s.quitch)
 }
 
+// loop handles messages recieved from peers
 func (s *FileServer) loop() {
 
 	defer func() {
@@ -214,6 +221,8 @@ func (s *FileServer) handleMessage(from string, msg *Message) error {
 	return nil
 }
 
+// handleMessageStoreFile handles an incoming request to store a file.
+// It reads the file stream from the peer, writes it to local disk, and acknowledges the stream closure.
 func (s *FileServer) handleMessageStoreFile(from string, msg MessageStoreFile) error {
 	peer, ok := s.peers[from]
 	if !ok {
@@ -231,6 +240,9 @@ func (s *FileServer) handleMessageStoreFile(from string, msg MessageStoreFile) e
 	return nil
 }
 
+// handleMessageGetFile handles a peer's request to retrieve a file.
+// It verifies the file exists locally, sends a stream initiation signal,
+// transmits the file size followed by the encrypted file content.
 func (s *FileServer) handleMessageGetFile(from string, msg MessageGetFile) error {
 
 	if !s.store.Has(msg.ID, msg.Key) {
@@ -245,7 +257,6 @@ func (s *FileServer) handleMessageGetFile(from string, msg MessageGetFile) error
 	}
 
 	if rc, ok := r.(io.ReadCloser); ok {
-		fmt.Println("closing readCloser.")
 		defer rc.Close()
 	}
 
@@ -270,6 +281,7 @@ func (s *FileServer) handleMessageGetFile(from string, msg MessageGetFile) error
 	return nil
 }
 
+// booststrapNetwork attempts to connect with each remote address
 func (s *FileServer) booststrapNetwork() error {
 	for _, addr := range s.BootstrapNodes {
 		if len(addr) == 0 {
