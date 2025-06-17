@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -102,13 +103,50 @@ func (s *Store) Clear() error {
 // Delete removes the file from local disk
 func (s *Store) Delete(id, key string) error {
 	pathKey := s.PathTransformFunc(key)
+	fullPath := filepath.Join(s.Root, id, pathKey.FullPath())
 
-	defer func() {
-		log.Printf("deleted [%s] from disk\n", pathKey.Filename)
-	}()
+	// Delete the file itself
+	if err := os.Remove(fullPath); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	log.Printf("deleted file [%s]", pathKey.Filename)
 
-	firstPathNameWithRoot := fmt.Sprintf("%s/%s/%s", s.Root, id, pathKey.FirstPathName())
-	return os.RemoveAll(firstPathNameWithRoot)
+	// Define the base boundary (e.g., storage)
+	boundary := s.Root
+	dir := filepath.Dir(fullPath)
+
+	// Recursively remove empty parent directories until the boundary
+	for dir != boundary && strings.HasPrefix(dir, boundary) {
+		isEmpty, err := isDirEmpty(dir)
+		if err != nil {
+			return err
+		}
+		if !isEmpty {
+			break
+		}
+		if err := os.Remove(dir); err != nil {
+			return err
+		}
+		dir = filepath.Dir(dir)
+	}
+
+	return nil
+}
+
+// isDirEmpty checks if a directory has no entries
+func isDirEmpty(path string) (bool, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+
+	// Read one entry to check emptiness
+	_, err = f.Readdirnames(1)
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, err
 }
 
 func (s *Store) Read(id, key string) (int64, io.Reader, error) {

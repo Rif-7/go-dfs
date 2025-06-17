@@ -29,7 +29,6 @@ func TestStore(t *testing.T) {
 	defer teardown(t, s)
 
 	for i := range 2 {
-
 		key := fmt.Sprintf("baz_%d", i)
 		data := []byte("test data")
 		if _, err := s.writeStream(id, key, bytes.NewReader(data)); err != nil {

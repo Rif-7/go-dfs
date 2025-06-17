@@ -73,6 +73,8 @@ func main() {
 
 		fmt.Println("data: ", string(b))
 
+		// Comment this condition out if you want
+		// to see the contents of the files
 		if err := s3.Delete(key); err != nil {
 			log.Fatal(err)
 		}
