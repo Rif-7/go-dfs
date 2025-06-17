@@ -49,6 +49,7 @@ go-dfs/
 - Files are encrypted with AES-CTR before being sent over the network (`crypto.go`).
 - `FileServer.Store()` saves and propagates files to peers.
 - `FileServer.Get()` retrieves the file either locally or from peers, decrypting it before use.
+- `FileServer.Delete()` deletes the file from local disk and from peers.
 
 ---
 

@@ -50,7 +50,7 @@ func main() {
 		key := fmt.Sprintf("helloworld_%d", i)
 		data := bytes.NewReader([]byte("your private data here"))
 		if err := s3.Store(key, data); err != nil {
-			fmt.Println(err)
+			log.Fatal(err)
 		}
 
 		if err := s3.store.Delete(s3.ID, key); err != nil {
@@ -66,7 +66,19 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(string(b))
+
+		if rc, ok := r.(io.ReadCloser); ok {
+			rc.Close()
+		}
+
+		fmt.Println("data: ", string(b))
+
+		if err := s3.Delete(key); err != nil {
+			log.Fatal(err)
+		}
+
 	}
+
+	select {}
 
 }

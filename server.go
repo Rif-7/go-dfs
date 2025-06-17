@@ -84,6 +84,11 @@ type MessageGetFile struct {
 	Key string
 }
 
+type MessageDeleteFile struct {
+	ID  string
+	Key string
+}
+
 // Get returns the file if it exists on local disk
 // otherwise tries to fetch it from peers
 func (s *FileServer) Get(key string) (io.Reader, error) {
@@ -169,6 +174,26 @@ func (s *FileServer) Store(key string, r io.Reader) error {
 	return nil
 }
 
+// Delete removes the file from local disk and all peers
+func (s *FileServer) Delete(key string) error {
+	if !s.store.Has(s.ID, key) {
+		return fmt.Errorf("[%s] trying to delete file (%s) but it does not exist on disk", s.Transport.Addr(), key)
+	}
+
+	if err := s.store.Delete(s.ID, key); err != nil {
+		return err
+	}
+
+	msg := &Message{
+		Payload: MessageDeleteFile{
+			ID:  s.ID,
+			Key: hashKey(key),
+		},
+	}
+
+	return s.broadcast(msg)
+}
+
 // OnPeer adds the peer to the peer map
 func (s *FileServer) OnPeer(p p2p.Peer) error {
 	s.peerLock.Lock()
@@ -211,12 +236,15 @@ func (s *FileServer) loop() {
 	}
 }
 
+// handleMessage forward the message to it's proper handler function
 func (s *FileServer) handleMessage(from string, msg *Message) error {
 	switch v := msg.Payload.(type) {
 	case MessageStoreFile:
 		return s.handleMessageStoreFile(from, v)
 	case MessageGetFile:
 		return s.handleMessageGetFile(from, v)
+	case MessageDeleteFile:
+		return s.handleMessageDeleteFile(from, v)
 	}
 	return nil
 }
@@ -281,6 +309,17 @@ func (s *FileServer) handleMessageGetFile(from string, msg MessageGetFile) error
 	return nil
 }
 
+// handleMessasgeDeleteFile removes
+func (s *FileServer) handleMessageDeleteFile(from string, msg MessageDeleteFile) error {
+	if !s.store.Has(msg.ID, msg.Key) {
+		return fmt.Errorf("[%s] trying to delete file (%s) but it does not exist on disk", s.Transport.Addr(), msg.Key)
+	}
+
+	fmt.Printf("[%s] deleted file (%s) on request from [%s]\n", s.Transport.Addr(), msg.Key, from)
+
+	return s.store.Delete(msg.ID, msg.Key)
+}
+
 // booststrapNetwork attempts to connect with each remote address
 func (s *FileServer) booststrapNetwork() error {
 	for _, addr := range s.BootstrapNodes {
@@ -314,4 +353,5 @@ func (s *FileServer) Start() error {
 func init() {
 	gob.Register(MessageStoreFile{})
 	gob.Register(MessageGetFile{})
+	gob.Register(MessageDeleteFile{})
 }
